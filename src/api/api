@@ -1,0 +1,11 @@
+// eslint-disable-next-line no-unused-vars
+import { get, post } from './axios'
+
+// 登陆api
+export const getSmsCode = p => post('/myd/sms/publicity/getSmsCode', p);
+export const signIn = p => post('/signIn', p);
+export const getWxOpenInfo = p => post('/myd/wechat/pay/shopping/getWxOpenInfo', p);
+export const verdictWxStatus = p => post('/myd/wechat/pay/shopping/verdictWxStatus', p);
+
+// 首页
+export const publicityShopIndex = p => post('/myd/publicityShop/shopping/publicityShopIndex', p);
