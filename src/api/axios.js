@@ -2,179 +2,102 @@
  * 请求拦截、相应拦截、错误统一处理
  */
 import axios from 'axios';
-// import QS from 'qs';
-// import router from '@/router'
-// import store from '../store/index'
-import { message } from 'ant-design-vue'
+import router from '@/router'
+import QS from 'qs'
+import {message} from 'ant-design-vue'
+import {isArray} from "../utils/validate";
+
+let loadingInstance
 
 const axiosService = axios.create({
-    baseURL:'http://localhost:8088/',
-    withCredentials:true,
-    timeout:10000
+    baseURL: 'http://localhost:8088/',
+    withCredentials: true,
+    timeout: 10000
 })
 
 // request拦截器 ==> 对请求参数进行处理
 axiosService.interceptors.request.use(
-    config =>{
-        // 后续再做
-        return config;
+    config => {
+        // if (store.getters['user/accessToken']) {
+        //     config.headers[tokenName] = store.getters['user/accessToken']
+        // }
+        if (config.data && config.headers['Content-Type'] === 'application/x-www-form-urlencoded;charset=UTF-8') {
+            config.data = QS.stringify(config.data)
+        }
+        // 加载动画
+        return config
     },
-    error => {
-        // 处理请求错误
-        Promise.reject(error).then(r => {
-            console.log(r);
-            // Message.error('出错了啊');
-        });
+    (error) => {
+        return Promise.reject(error)
     }
 )
 
 // respone拦截器 ==> 对响应做处理
 axiosService.interceptors.response.use(
     response => {
-        if (response.status !== 200) {
-            console.log(response.status);
-            return Promise.reject(new Error(response || "Error"))
+        if (loadingInstance) loadingInstance.close()
+        const successCode = ['0000', '0001']
+        const {data, config} = response
+        const {code, msg} = data
+        // 操作正常Code数组
+        const codeVerificationArray = isArray(successCode)
+            ? [...successCode]
+            : [...[successCode]]
+        // 是否操作正常
+        if (codeVerificationArray.includes(code)) {
+            return data
+        } else {
+            handleCode(code, msg)
+            return Promise.reject(
+                'vue-admin-beautiful请求异常拦截:' +
+                JSON.stringify({url: config.url, code, msg}) || 'Error'
+            )
         }
-        return response;
     },
     error => {
-        // eslint-disable-next-line no-debugger
-        // debugger
-        // console.log(error.toJSON());
-        if (error.response && error.response.status) {
-            switch (error.response.status) {
-                case 400:
-                    console.log("参数错误")
-                    return Promise.reject('参数错误')
-            }
+        if (loadingInstance) loadingInstance.close()
+        const {response, message} = error
+        if (error.response && error.response.data) {
+            const {status, data} = response
+            handleCode(status, data.msg || message)
+            return Promise.reject(error)
         } else {
-            // Message.error('wocao，未知错误');
+            let {message} = error
+            if (message === 'Network Error') {
+                message = '后端接口连接异常'
+            }
+            if (message.includes('timeout')) {
+                message = '后端接口请求超时'
+            }
+            if (message.includes('Request failed with status code')) {
+                const code = message.substr(message.length - 3)
+                message = '后端接口' + code + '异常'
+            }
+            message.error(message || `后端接口未知异常`)
+            return Promise.reject(error)
         }
-        return Promise.reject(error)
     }
 )
 
-// post请求头
-// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
-
-// 请求拦截器
-// axios.interceptors.request.use(
-//     config => {
-//         // 每次发送请求之前判断是否存在token，如果存在，则统一在http请求的header都加上token，不用每次请求都手动添加了
-//         // 即使本地存在token，也有可能token是过期的，所以在响应拦截器中要对返回状态进行判断
-//         const token = store.state.token;
-//         token && (config.headers.Authorization = token);
-//         return config;
-//     }, error => {
-//         return Promise.error(error);
-//     })
-//
-// // 响应拦截器
-// axios.interceptors.response.use(
-//     response => {
-//         if (response.status === 200) {
-//             return Promise.resolve(response);
-//         }
-//     },
-//         // 服务器状态码不是200的情况
-//     error => {
-//         Message.error("asd");
-//         console.log(error.response.status);
-//         if (error.response.status) {
-//             switch (error.response.status) {
-//                 case 400:
-//                     this.$message.error("asd");
-//                     router.replace({
-//                         path: '/signIn',
-//                         query: {
-//                             redirect: router.currentRoute.fullPath
-//                         }
-//                     });
-//                     break;
-//                 // 401: 未登录
-//                 // 未登录则跳转登录页面，并携带当前页面的路径
-//                 // 在登录成功后返回当前页面，这一步需要在登录页操作。
-//                 case 401:
-//                     router.replace({
-//                         path: '/signIn',
-//                         query: {
-//                             redirect: router.currentRoute.fullPath
-//                         }
-//                     });
-//                     break;
-//                 // 403 token过期
-//                 // 登录过期对用户进行提示
-//                 // 清除本地token和清空vuex中token对象
-//                 // 跳转登录页面
-//                 case 403:
-//                     this.$message.error({
-//                         message: '登录过期，请重新登录',
-//                         duration: 1000,
-//                         forbidClick: true
-//                     });
-//                     // 清除token
-//                     localStorage.removeItem('token');
-//                     store.commit('loginSuccess', null);
-//                     // 跳转登录页面，并将要浏览的页面fullPath传过去，登录成功后跳转需要访问的页面
-//                     setTimeout(() => {
-//                         router.replace({
-//                             path: '/signIn',
-//                             query: {
-//                                 redirect: router.currentRoute.fullPath
-//                             }
-//                         });
-//                     }, 1000);
-//                     break;
-//                 // 404请求不存在
-//                 case 404:
-//                     this.$message.error({
-//                         message: '网络请求不存在',
-//                         duration: 1500,
-//                         forbidClick: true
-//                     });
-//                     break;
-//                 // 其他错误，直接抛出错误提示
-//                 default:
-//                     this.$message.error({
-//                         message: error.response.data.message,
-//                         duration: 1500,
-//                         forbidClick: true
-//                     });
-//             }
-//             return Promise.reject(error.response);
-//         }
-//     });
-
 /**
- * get方法，对应get请求
- * @param {String} url [请求的url地址]
- * @param {Object} params [请求时携带的参数]
+ * 处理code异常
+ * @param code
+ * @param msg
  */
-export function get(url, params) {
-    return new Promise((resolve, reject) => {
-        axiosService.get(url, {
-            params: params
-        }).then(res => {
-            resolve(res.data);
-        }).catch(err => {
-            reject(err)
-        })
-    });
-}
-
-/**
- * post方法，对应post请求
- * @param {String} url [请求的url地址]
- * @param {Object} params [请求时携带的参数]
- */
-export function post(url, params) {
-    return axiosService({
-        url: url, // 根据实际接口地址来写
-        method: "post",
-        data: params
-    }).catch(error => {
-        message.error(error)
-    })
+const handleCode = (code, msg) => {
+    switch (code) {
+        case 401:
+            message.error(msg || '登录失效')
+            // store.dispatch('user/resetAll').catch(() => {})
+            break
+        case 403:
+            router.push({path: '/401'}).catch(() => {
+            })
+            break
+        default:
+            message.error(msg || `后端接口${code}异常`)
+            break
+    }
 }
 
 export default axiosService;

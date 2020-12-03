@@ -1,17 +1,16 @@
-// eslint-disable-next-line no-unused-vars
-import { get, post } from './axios'
-// import axiosService from './axios'
+import axiosService from './axios'
 
-// 登陆api
-export const signIn = p => post('/signIn', p);
-export const signOut = p => get('/signOut', p);
+export async function signIn(data) {
+    return axiosService({
+        url: '/signIn',
+        method: 'post',
+        params: data
+    })
+}
 
-// 下面是POST形式
-// export const signIn = data => {
-//     return axiosService({
-//         url: "/signIn", // 根据实际接口地址来写
-//         method: "post",
-//         data
-//     });
-// };
-// 首页
+export async function signOut() {
+    return axiosService({
+        url: '/signOut',
+        method: 'get'
+    })
+}

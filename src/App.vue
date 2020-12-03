@@ -1,8 +1,8 @@
 <template>
   <div id="nav">
-    <router-view/>
-<!--    <router-link to="/">Home</router-link> |-->
-<!--    <router-link to="/about">About</router-link>-->
+    <a-spin :spinning="this.$store.state.loading" tip="loading...">
+      <router-view/>
+    </a-spin>
   </div>
 </template>
 
@@ -16,7 +16,7 @@
 }
 
 #nav {
-  padding: 30px;
+  padding: 0px;
 }
 
 #nav a {
