@@ -3,9 +3,9 @@ import Home from '../views/Home.vue'
 
 const routes = [
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import(/* webpackChunkName: "about" */ '@/views/Login.vue')
+    path: '/signIn',
+    name: 'SignIn',
+    component: () => import(/* webpackChunkName: "about" */ '@/views/SignIn.vue')
   },
   {
     path: '/',

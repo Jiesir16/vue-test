@@ -12,12 +12,12 @@ if (process.env.NODE_ENV == 'development') {
 } else if (process.env.NODE_ENV == 'debug') {
     axios.defaults.baseURL = '';
 } else if (process.env.NODE_ENV == 'production') {
-    axios.defaults.baseURL = 'http://api.123dailu.com/';
+    axios.defaults.baseURL = 'http://localhost:8088/';
 }
 
 // 请求超时时间
 axios.defaults.timeout = 10000;
-
+// axios.defaults.withCredentials = true;
 // post请求头
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
 
@@ -48,8 +48,10 @@ axios.interceptors.response.use(
         if (error.response.status) {
             switch (error.response.status) {
                 case 400:
+                    console.log("ads");
+                    this.$message.error('错了哦，这是一条错误消息');
                     router.replace({
-                        path: '/login',
+                        path: '/signIn',
                         query: {
                             redirect: router.currentRoute.fullPath
                         }
@@ -60,7 +62,7 @@ axios.interceptors.response.use(
                 // 在登录成功后返回当前页面，这一步需要在登录页操作。
                 case 401:
                     router.replace({
-                        path: '/login',
+                        path: '/signIn',
                         query: {
                             redirect: router.currentRoute.fullPath
                         }
@@ -82,7 +84,7 @@ axios.interceptors.response.use(
                     // 跳转登录页面，并将要浏览的页面fullPath传过去，登录成功后跳转需要访问的页面
                     setTimeout(() => {
                         router.replace({
-                            path: '/login',
+                            path: '/signIn',
                             query: {
                                 redirect: router.currentRoute.fullPath
                             }
@@ -134,11 +136,9 @@ export function get(url, params) {
 export function post(url, params) {
     return new Promise((resolve, reject) => {
         axios.post(url, QS.stringify(params)).then(res => {
-            resolve(res.data
-            );
+            resolve(res.data);
         }).catch(err => {
-            reject(err.data
-            )
+            reject(err.data)
         })
     });
 }
