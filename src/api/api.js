@@ -14,3 +14,12 @@ export async function signOut() {
         method: 'get'
     })
 }
+
+export async function getUserList(param) {
+    console.log(param)
+    return axiosService({
+        url: '/user/list',
+        method: 'post',
+        data: param
+    })
+}
